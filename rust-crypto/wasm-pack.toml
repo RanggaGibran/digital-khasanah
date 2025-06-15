@@ -1,0 +1,6 @@
+// Build configuration
+target_dir = "pkg"
+[build]
+steps = [
+    { name = "Build", command = "wasm-pack build --target web --out-dir ../pkg" }
+]

@@ -1,0 +1,35 @@
+{
+  "name": "digital-khasanah-firebase",
+  "version": "1.0.0",
+  "description": "Digital Khasanah with React frontend and Rust WebAssembly",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "npm run build:wasm && vite build",
+    "build:wasm": "cd rust-crypto && wasm-pack build --target web",
+    "dev": "npm run build:wasm && vite",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "rust",
+    "wasm",
+    "firebase",
+    "react"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^10.14.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-wasm-pack": "^0.1.12",
+    "wasm-pack": "^0.13.1"
+  }
+}

@@ -1,87 +1,67 @@
 # Digital Khasanah
 
-Digital Khasanah adalah platform brankas digital dengan enkripsi end-to-end yang memberikan pengguna kendali penuh atas data mereka.
+A secure digital storage application using Rust for cryptography, React for frontend, and Firebase for backend services.
 
-## Struktur Project
+## Project Setup
 
-Proyek ini terdiri dari dua bagian utama:
+### Environment Variables
 
-- **Backend**: API server yang dibangun dengan Rust dan Axum
-- **Frontend**: Aplikasi web yang dibangun dengan HTML, CSS, dan JavaScript
+The project requires Firebase configuration. Create a `.env` file at the root of the project with the following variables:
 
-## Memulai
-
-### Prasyarat
-
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Node.js](https://nodejs.org/en/) (opsional, untuk alat pengembangan frontend)
-
-### Instalasi Backend
-
-1. Masuk ke direktori backend:
-
-```bash
-cd backend
+```
+VITE_FIREBASE_API_KEY=YOUR_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN=YOUR_PROJECT_ID.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=YOUR_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET=YOUR_PROJECT_ID.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=YOUR_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID=YOUR_APP_ID
 ```
 
-2. Kompilasi dan jalankan server dalam mode pengembangan:
+Replace the placeholder values with your actual Firebase project configuration.
 
-```bash
-cargo run
-```
+### Installation
 
-Server akan berjalan di `localhost:3000`.
+1. Install dependencies:
+   ```
+   npm install
+   ```
 
-### Menjalankan Frontend
+2. Build the Rust WASM module:
+   ```
+   cd rust-crypto
+   wasm-pack build --target web
+   cd ..
+   ```
 
-1. Masuk ke direktori frontend:
+3. Start the development server:
+   ```
+   npm run dev
+   ```
 
-```bash
-cd frontend
-```
+### Firebase Setup
 
-2. Anda dapat menggunakan HTTP server sederhana untuk menjalankan frontend. Misalnya dengan Python:
+1. Install Firebase CLI if not already installed:
+   ```
+   npm install -g firebase-tools
+   ```
 
-```bash
-# Jika menggunakan Python 3
-python -m http.server 8080 -d public
+2. Login to Firebase:
+   ```
+   firebase login
+   ```
 
-# Jika menggunakan Python 2
-cd public && python -m SimpleHTTPServer 8080
-```
+3. Initialize the Firebase project:
+   ```
+   firebase init
+   ```
 
-Atau dengan Node.js:
+4. Deploy Firebase functions:
+   ```
+   firebase deploy --only functions
+   ```
 
-```bash
-# Instal terlebih dahulu jika belum
-npm install -g http-server
+## Project Structure
 
-# Jalankan server
-http-server public -p 8080
-```
-
-Akses aplikasi di `localhost:8080`.
-
-## Fitur
-
-- Otentikasi pengguna yang aman
-- Enkripsi end-to-end di sisi klien
-- Brankas digital untuk menyimpan data pribadi
-- Impor manual data dari Google Takeout dan Instagram Data Download
-
-## Teknologi
-
-### Backend
-
-- Rust dengan Axum web framework
-- JWT untuk autentikasi
-- Enkripsi end-to-end
-
-### Frontend
-
-- HTML/CSS/JavaScript vanilla
-- Rencana masa depan: Migrasi ke Leptos/Dioxus dengan WebAssembly
-
-## Roadmap Pengembangan
-
-Lihat file [DigitalKhasanah.md](../DigitalKhasanah.md) untuk detail lebih lanjut tentang roadmap pengembangan.
+- `src/`: React frontend code
+- `rust-crypto/`: Rust WebAssembly cryptography module
+- `functions/`: Firebase Cloud Functions for backend logic
