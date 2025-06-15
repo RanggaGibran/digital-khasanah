@@ -157,34 +157,138 @@ const fileUtils = {
     
     return iconMap[extension] || 'file';
   },
+    /**
+   * Generate encryption key from password
+   * @param {string} password - The password to derive the key from
+   * @returns {Promise<CryptoKey>} The derived encryption key
+   */
+  deriveKey: async function(password) {
+    // Convert password string to a buffer
+    const encoder = new TextEncoder();
+    const passwordData = encoder.encode(password);
+    
+    // Create a key from the password
+    const passwordKey = await crypto.subtle.importKey(
+      "raw", 
+      passwordData, 
+      { name: "PBKDF2" }, 
+      false, 
+      ["deriveKey"]
+    );
+    
+    // Use a static salt for simplicity (in production, this should be randomly generated and stored)
+    const salt = encoder.encode("DigitalKhasanahSaltValue");
+    
+    // Derive a key using PBKDF2
+    const key = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      passwordKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+    
+    return key;
+  },
   
   /**
    * Encrypt a file before uploading (client-side encryption)
    * @param {File} file - The file to encrypt
    * @param {string} password - The encryption password
-   * @returns {Promise<Blob>} The encrypted file blob
+   * @returns {Promise<Object>} Object containing encrypted file blob and metadata
    */
   encryptFile: async function(file, password) {
-    // TODO: Implement client-side encryption
-    // This is a placeholder for future implementation
-    // For MVP, we'll use Firebase Storage security rules for access control
-    
-    console.warn('File encryption not yet implemented');
-    return file;
+    try {
+      // Step 1: Convert the file to ArrayBuffer
+      const fileBuffer = await file.arrayBuffer();
+      
+      // Step 2: Generate a key from the password
+      const key = await this.deriveKey(password);
+      
+      // Step 3: Generate a random IV (Initialization Vector)
+      const iv = crypto.getRandomValues(new Uint8Array(12)); // 12 bytes for AES-GCM
+      
+      // Step 4: Encrypt the file data
+      const encryptedData = await crypto.subtle.encrypt(
+        {
+          name: "AES-GCM",
+          iv: iv
+        },
+        key,
+        fileBuffer
+      );
+      
+      // Step 5: Combine the IV and encrypted data into one ArrayBuffer
+      const combinedBuffer = new Uint8Array(iv.length + encryptedData.byteLength);
+      combinedBuffer.set(iv, 0);
+      combinedBuffer.set(new Uint8Array(encryptedData), iv.length);
+      
+      // Step 6: Create a new Blob from the combined buffer
+      const encryptedBlob = new Blob([combinedBuffer], { type: 'application/encrypted-file' });
+      
+      // Step 7: Create a metadata object with necessary info for decryption
+      const metadata = {
+        originalType: file.type,
+        originalName: file.name,
+        originalSize: file.size,
+        encryptionMethod: 'AES-GCM-256',
+        // We don't need to include IV as it's prepended to the encrypted data
+      };
+      
+      return {
+        encryptedBlob,
+        metadata
+      };
+    } catch (error) {
+      console.error('Error encrypting file:', error);
+      throw new Error('File encryption failed: ' + error.message);
+    }
   },
   
   /**
    * Decrypt a file after downloading (client-side decryption)
    * @param {Blob} encryptedBlob - The encrypted file blob
    * @param {string} password - The decryption password
+   * @param {Object} metadata - Metadata about the original file
    * @returns {Promise<Blob>} The decrypted file blob
    */
-  decryptFile: async function(encryptedBlob, password) {
-    // TODO: Implement client-side decryption
-    // This is a placeholder for future implementation
-    
-    console.warn('File decryption not yet implemented');
-    return encryptedBlob;
+  decryptFile: async function(encryptedBlob, password, metadata) {
+    try {
+      // Step 1: Convert the encrypted blob to ArrayBuffer
+      const encryptedBuffer = await encryptedBlob.arrayBuffer();
+      const encryptedData = new Uint8Array(encryptedBuffer);
+      
+      // Step 2: Extract the IV (first 12 bytes) and actual encrypted data
+      const iv = encryptedData.slice(0, 12);
+      const actualEncryptedData = encryptedData.slice(12);
+      
+      // Step 3: Generate a key from the password
+      const key = await this.deriveKey(password);
+      
+      // Step 4: Decrypt the data
+      const decryptedData = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: iv
+        },
+        key,
+        actualEncryptedData
+      );
+      
+      // Step 5: Create a Blob with the original type if available
+      const originalType = metadata?.originalType || 'application/octet-stream';
+      const decryptedBlob = new Blob([decryptedData], { type: originalType });
+      
+      return decryptedBlob;
+    } catch (error) {
+      console.error('Error decrypting file:', error);
+      throw new Error('File decryption failed. This could be due to an incorrect password or corrupted file.');
+    }
   }
 };
 
